@@ -15,9 +15,9 @@ if sys.version_info >= (3, 10):
 else:
     from typing_extensions import TypeGuard
 
-from black.mode import Mode
-from black.output import out
-from black.report import NothingChanged
+from src.black.mode import Mode
+from src.black.output import out
+from src.black.report import NothingChanged
 
 TRANSFORMED_MAGICS = frozenset((
     "get_ipython().run_cell_magic",
@@ -110,7 +110,6 @@ def remove_trailing_semicolon(src: str) -> tuple[str, bool]:
     ``tokenize_rt`` so that round-tripping works fine.
     """
     from tokenize_rt import reversed_enumerate, src_to_tokens, tokens_to_src
-
     tokens = src_to_tokens(src)
     trailing_semicolon = False
     for idx, token in reversed_enumerate(tokens):

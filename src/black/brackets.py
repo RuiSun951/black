@@ -4,7 +4,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Final, Optional, Union
 
-from black.nodes import (
+from src.black.nodes import (
     BRACKET,
     CLOSING_BRACKETS,
     COMPARATORS,
@@ -16,8 +16,8 @@ from black.nodes import (
     is_vararg,
     syms,
 )
-from blib2to3.pgen2 import token
-from blib2to3.pytree import Leaf, Node
+from src.blib2to3.pgen2 import token
+from src.blib2to3.pytree import Leaf, Node
 
 # types
 LN = Union[Leaf, Node]

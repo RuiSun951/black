@@ -1,3 +1,3 @@
-from black import patched_main
+from src.black import patched_main
 
 patched_main()

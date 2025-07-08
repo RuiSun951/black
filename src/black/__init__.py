@@ -28,16 +28,16 @@ from mypy_extensions import mypyc_attr
 from pathspec import PathSpec
 from pathspec.patterns.gitwildmatch import GitWildMatchPatternError
 
-from _black_version import version as __version__
-from black.cache import Cache
-from black.comments import normalize_fmt_off
-from black.const import (
+from src._black_version import version as __version__
+from src.black.cache import Cache
+from src.black.comments import normalize_fmt_off
+from src.black.const import (
     DEFAULT_EXCLUDES,
     DEFAULT_INCLUDES,
     DEFAULT_LINE_LENGTH,
     STDIN_PLACEHOLDER,
 )
-from black.files import (
+from src.black.files import (
     best_effort_relative_path,
     find_project_root,
     find_pyproject_toml,
@@ -49,7 +49,7 @@ from black.files import (
     resolves_outside_root_or_cannot_stat,
     wrap_stream_for_windows,
 )
-from black.handle_ipynb_magics import (
+from src.black.handle_ipynb_magics import (
     PYTHON_CELL_MAGICS,
     jupyter_dependencies_are_installed,
     mask_cell,
@@ -58,29 +58,29 @@ from black.handle_ipynb_magics import (
     unmask_cell,
     validate_cell,
 )
-from black.linegen import LN, LineGenerator, transform_line
-from black.lines import EmptyLineTracker, LinesBlock
-from black.mode import FUTURE_FLAG_TO_FEATURE, VERSION_TO_FEATURES, Feature
-from black.mode import Mode as Mode  # re-exported
-from black.mode import Preview, TargetVersion, supports_feature
-from black.nodes import STARS, is_number_token, is_simple_decorator_expression, syms
-from black.output import color_diff, diff, dump_to_file, err, ipynb_diff, out
-from black.parsing import (  # noqa F401
+from src.black.linegen import LN, LineGenerator, transform_line
+from src.black.lines import EmptyLineTracker, LinesBlock
+from src.black.mode import FUTURE_FLAG_TO_FEATURE, VERSION_TO_FEATURES, Feature
+from src.black.mode import Mode as Mode  # re-exported
+from src.black.mode import Preview, TargetVersion, supports_feature
+from src.black.nodes import STARS, is_number_token, is_simple_decorator_expression, syms
+from src.black.output import color_diff, diff, dump_to_file, err, ipynb_diff, out
+from src.black.parsing import (  # noqa F401
     ASTSafetyError,
     InvalidInput,
     lib2to3_parse,
     parse_ast,
     stringify_ast,
 )
-from black.ranges import (
+from src.black.ranges import (
     adjusted_lines,
     convert_unchanged_lines,
     parse_line_ranges,
     sanitized_lines,
 )
-from black.report import Changed, NothingChanged, Report
-from blib2to3.pgen2 import token
-from blib2to3.pytree import Leaf, Node
+from src.black.report import Changed, NothingChanged, Report
+from src.blib2to3.pgen2 import token
+from src.blib2to3.pytree import Leaf, Node
 
 COMPILED = Path(__file__).suffix in (".pyd", ".so")
 
@@ -140,7 +140,7 @@ def read_pyproject_toml(
         return None
     else:
         spellcheck_pyproject_toml_keys(ctx, list(config), value)
-        # Sanitize the values to be Click friendly. For more information please see:
+        # Sanitize the values to be Click-friendly. For more information please see:
         # https://github.com/psf/black/issues/1458
         # https://github.com/pallets/click/issues/1567
         config = {
@@ -701,7 +701,7 @@ def main(  # noqa: C901
                 lines=lines,
             )
         else:
-            from black.concurrency import reformat_many
+            from src.black.concurrency import reformat_many
 
             if lines:
                 err("Cannot use --line-ranges to format multiple files.")
@@ -1001,7 +1001,7 @@ def format_stdin_to_stdout(
 ) -> bool:
     """Format file on stdin. Return True if changed.
 
-    If content is None, it's read from sys.stdin.
+    If the content is None, it's read from sys.stdin.
 
     If `write_back` is YES, write reformatted code back to stdout. If it is DIFF,
     write a diff to stdout. The `mode` argument is passed to
@@ -1177,18 +1177,18 @@ def format_str(
     `mode` determines formatting options, such as how many characters per line are
     allowed.  Example:
 
-    >>> import black
-    >>> print(black.format_str("def f(arg:str='')->None:...", mode=black.Mode()))
+    >>> import src.black
+    >>> print(src.black.format_str("def f(arg:str='')->None:...", mode=src.black.Mode()))
     def f(arg: str = "") -> None:
         ...
 
     A more complex example:
 
     >>> print(
-    ...   black.format_str(
+    ...   src.black.format_str(
     ...     "def f(arg:str='')->None: hey",
-    ...     mode=black.Mode(
-    ...       target_versions={black.TargetVersion.PY36},
+    ...     mode=src.black.Mode(
+    ...       target_versions={src.black.TargetVersion.PY36},
     ...       line_length=10,
     ...       string_normalization=False,
     ...       is_pyi=False,
