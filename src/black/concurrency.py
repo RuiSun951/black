@@ -18,11 +18,11 @@ from typing import Any, Optional
 
 from mypy_extensions import mypyc_attr
 
-from src.black import WriteBack, format_file_in_place
-from src.black.cache import Cache
-from src.black.mode import Mode
-from src. black.output import err
-from src.black.report import Changed, Report
+from black import WriteBack, format_file_in_place
+from black.cache import Cache
+from black.mode import Mode
+from black.output import err
+from black.report import Changed, Report
 
 
 def maybe_install_uvloop() -> None:

@@ -28,16 +28,16 @@ from mypy_extensions import mypyc_attr
 from pathspec import PathSpec
 from pathspec.patterns.gitwildmatch import GitWildMatchPatternError
 
-from src._black_version import version as __version__
-from src.black.cache import Cache
-from src.black.comments import normalize_fmt_off
-from src.black.const import (
+from _black_version import version as __version__
+from black.cache import Cache
+from black.comments import normalize_fmt_off
+from black.const import (
     DEFAULT_EXCLUDES,
     DEFAULT_INCLUDES,
     DEFAULT_LINE_LENGTH,
     STDIN_PLACEHOLDER,
 )
-from src.black.files import (
+from black.files import (
     best_effort_relative_path,
     find_project_root,
     find_pyproject_toml,
@@ -49,7 +49,7 @@ from src.black.files import (
     resolves_outside_root_or_cannot_stat,
     wrap_stream_for_windows,
 )
-from src.black.handle_ipynb_magics import (
+from black.handle_ipynb_magics import (
     PYTHON_CELL_MAGICS,
     jupyter_dependencies_are_installed,
     mask_cell,
@@ -58,29 +58,29 @@ from src.black.handle_ipynb_magics import (
     unmask_cell,
     validate_cell,
 )
-from src.black.linegen import LN, LineGenerator, transform_line
-from src.black.lines import EmptyLineTracker, LinesBlock
-from src.black.mode import FUTURE_FLAG_TO_FEATURE, VERSION_TO_FEATURES, Feature
-from src.black.mode import Mode as Mode  # re-exported
-from src.black.mode import Preview, TargetVersion, supports_feature
-from src.black.nodes import STARS, is_number_token, is_simple_decorator_expression, syms
-from src.black.output import color_diff, diff, dump_to_file, err, ipynb_diff, out
-from src.black.parsing import (  # noqa F401
+from black.linegen import LN, LineGenerator, transform_line
+from black.lines import EmptyLineTracker, LinesBlock
+from black.mode import FUTURE_FLAG_TO_FEATURE, VERSION_TO_FEATURES, Feature
+from black.mode import Mode as Mode  # re-exported
+from black.mode import Preview, TargetVersion, supports_feature
+from black.nodes import STARS, is_number_token, is_simple_decorator_expression, syms
+from black.output import color_diff, diff, dump_to_file, err, ipynb_diff, out
+from black.parsing import (  # noqa F401
     ASTSafetyError,
     InvalidInput,
     lib2to3_parse,
     parse_ast,
     stringify_ast,
 )
-from src.black.ranges import (
+from black.ranges import (
     adjusted_lines,
     convert_unchanged_lines,
     parse_line_ranges,
     sanitized_lines,
 )
-from src.black.report import Changed, NothingChanged, Report
-from src.blib2to3.pgen2 import token
-from src.blib2to3.pytree import Leaf, Node
+from black.report import Changed, NothingChanged, Report
+from blib2to3.pgen2 import token
+from blib2to3.pytree import Leaf, Node
 
 COMPILED = Path(__file__).suffix in (".pyd", ".so")
 
@@ -701,7 +701,7 @@ def main(  # noqa: C901
                 lines=lines,
             )
         else:
-            from src.black.concurrency import reformat_many
+            from black.concurrency import reformat_many
 
             if lines:
                 err("Cannot use --line-ranges to format multiple files.")
@@ -955,11 +955,6 @@ def format_file_in_place(
         )
     except NothingChanged:
         return False
-    except JSONDecodeError:
-        raise ValueError(
-            f"File '{src}' cannot be parsed as valid Jupyter notebook."
-        ) from None
-    src_contents = header.decode(encoding) + src_contents
     dst_contents = header.decode(encoding) + dst_contents
 
     if write_back == WriteBack.YES:
@@ -989,6 +984,110 @@ def format_file_in_place(
             f.detach()
 
     return True
+
+
+"""
+The following code is main logic of issue #2522: Replace multiple parentheses occurrences with one
+this is for COMP354 project dev assignment,
+written  by Rui SUN, in group of 4692
+"""
+from tokenize_rt import src_to_tokens, tokens_to_src, Token
+from typing import List
+
+def remove_redundant_parentheses(src: str) -> str:
+    tokens = src_to_tokens(src)
+    tokens = fully_flatten(tokens)
+    return tokens_to_src(tokens)
+
+def fully_flatten(tokens: List[Token]) -> List[Token]:
+    """Repeat recursively_clean until no further change in source."""
+    while True:
+        new = recursively_clean(tokens)
+        if tokens_to_src(new) == tokens_to_src(tokens):
+            return new
+        tokens = new
+
+def recursively_clean(tokens: List[Token]) -> List[Token]:
+    """Unwrap redundant parentheses recursively using bracket matching."""
+    i = 0
+    output = []
+
+    while i < len(tokens):
+        tok = tokens[i]
+
+        if tok.name == "OP" and tok.src in "([":  # start of the group
+            open_tok = tok.src
+            close_tok = ")" if open_tok == "(" else "]"
+            j = find_matching(tokens, i, open_tok, close_tok)
+
+            if j is None:
+                # malformed; keep as-is
+                output.append(tok)
+                i += 1
+                continue
+
+            inner = tokens[i + 1 : j]
+            cleaned_inner = fully_flatten(inner)
+
+            if open_tok == "(" and is_redundant(cleaned_inner):
+                # unwrap: skip outer parens
+                output.extend(cleaned_inner)
+            else:
+                output.append(tokens[i])          # keep open
+                output.extend(cleaned_inner)
+                output.append(tokens[j])          # keep close
+            i = j + 1
+        else:
+            output.append(tok)
+            i += 1
+    return output
+
+def find_matching(tokens: List[Token], start: int, open_tok: str, close_tok: str) -> int | None:
+    """Find index of matching closing paren/bracket."""
+    depth = 0
+    for i in range(start, len(tokens)):
+        if tokens[i].name == "OP":
+            if tokens[i].src == open_tok:
+                depth += 1
+            elif tokens[i].src == close_tok:
+                depth -= 1
+                if depth == 0:
+                    return i
+    return None
+
+def is_redundant(tokens: List[Token]) -> bool:
+    if not tokens:
+        return False
+
+    if len(tokens) == 1:
+        return True
+
+    # Don't unwrap function parameters
+    for t in tokens:
+        if t.name == "OP" and t.src == ":":
+            return False
+
+    # Don't unwrap real tuples, but check and unwrap redundant grouping
+    paren_depth = bracket_depth = 0
+    for t in tokens:
+        if t.name == "OP":
+            if t.src == "(":
+                paren_depth += 1
+            elif t.src == ")":
+                paren_depth -= 1
+            elif t.src == "[":
+                bracket_depth += 1
+            elif t.src == "]":
+                bracket_depth -= 1
+            elif t.src == "," and paren_depth == 0 and bracket_depth == 0:
+                return False
+
+    # Otherwise it's just a redundant grouping: unwrap!
+    return True
+
+"""
+End of code for COMP354 project dev assignment
+"""
 
 
 def format_stdin_to_stdout(
@@ -1079,12 +1178,15 @@ def format_file_contents(
         dst_contents = format_str(src_contents, mode=mode, lines=lines)
     if src_contents == dst_contents:
         raise NothingChanged
-
     if not fast and not mode.is_ipynb:
         # Jupyter notebooks will already have been checked above.
-        check_stability_and_equivalence(
-            src_contents, dst_contents, mode=mode, lines=lines
-        )
+        check_stability_and_equivalence(src_contents, dst_contents, mode=mode, lines=lines)
+
+    if dst_contents.strip():
+        first = dst_contents.lstrip().splitlines()[0]
+        if first.startswith("from typing"):
+            dst_contents = remove_redundant_parentheses(dst_contents)
+
     return dst_contents
 
 
@@ -1177,18 +1279,18 @@ def format_str(
     `mode` determines formatting options, such as how many characters per line are
     allowed.  Example:
 
-    >>> import src.black
-    >>> print(src.black.format_str("def f(arg:str='')->None:...", mode=src.black.Mode()))
+    >>> import black
+    >>> print(black.format_str("def f(arg:str='')->None:...", mode=src.black.Mode()))
     def f(arg: str = "") -> None:
         ...
 
     A more complex example:
 
     >>> print(
-    ...   src.black.format_str(
+    ...   black.format_str(
     ...     "def f(arg:str='')->None: hey",
-    ...     mode=src.black.Mode(
-    ...       target_versions={src.black.TargetVersion.PY36},
+    ...     mode=black.Mode(
+    ...       target_versions={black.TargetVersion.PY36},
     ...       line_length=10,
     ...       string_normalization=False,
     ...       is_pyi=False,

@@ -15,9 +15,9 @@ if sys.version_info >= (3, 10):
 else:
     from typing_extensions import TypeGuard
 
-from src.black.mode import Mode
-from src.black.output import out
-from src.black.report import NothingChanged
+from black.mode import Mode
+from black.output import out
+from black.report import NothingChanged
 
 TRANSFORMED_MAGICS = frozenset((
     "get_ipython().run_cell_magic",

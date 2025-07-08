@@ -12,9 +12,9 @@ from typing import NamedTuple
 
 from platformdirs import user_cache_dir
 
-from src._black_version import version as __version__
-from src.black.mode import Mode
-from src.black.output import err
+from _black_version import version as __version__
+from black.mode import Mode
+from black.output import err
 
 if sys.version_info >= (3, 11):
     from typing import Self
